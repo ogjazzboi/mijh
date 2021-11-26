@@ -1,33 +1,22 @@
-name: RDP3
-
-on: workflow_dispatch
-
+version: 2.1 
+ 
+orbs:
+  win: circleci/windows@2.2.0
+ 
 jobs:
-  build:
-
-    runs-on: windows-latest
-    timeout-minutes: 9999
-
+  build: 
+    executor:
+      name: win/default 
+      size: "medium" 
+ 
     steps:
-    - uses: actions/checkout@v2
-    - name: Copy NSSM & Ngrok to Windows Directory.
-      run: | 
-        copy nssm.exe C:\Windows\System32
-        copy ngrok.exe C:\Windows\System32
-    - name: Connect your NGROK account
-      run: .\ngrok.exe authtoken $Env:NGROK_AUTH_TOKEN
-      env:
-        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN3 }}
-    - name: Make YML file for NGROK.
-      run: start NGROK-AP.bat
-    - name: Enable RDP Access.
-      run: | 
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0
-        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
-    - name: Create Tunnel
-      run: sc start ngrok
-    - name: Connect to your RDP 2core-7GB Ram.
-      run: cmd /c NGROK-CHECK.bat
-    - name: All Done! You can close Tab now! Maximum VM time:6h.
-      run: cmd /c loop.bat 
+      - checkout      
+      - run: Set-LocalUser -Name "Administrator" -Password (ConvertTo-SecureString -AsPlainText "jazzboi1670" -Force)
+      - run: Get-LocalUser -Name "Administrator" | Enable-LocalUser 
+      - run: Invoke-WebRequest https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-windows-amd64.zip -OutFile ngrok.zip
+      - run: tar xf ngrok.zip
+      - run: Copy ngrok.exe C:\Windows\System32
+      - run: cmd /c echo ./ngrok.exe authtoken "" >a.ps1
+      - run: cmd /c echo cmd /k start ngrok.exe tcp 3389 >>a.ps1
+      - run: cmd /c echo ping -n 999999 10.10.10.10 >>a.ps1
+      - run: .\a.ps1
